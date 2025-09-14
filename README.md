@@ -1,9 +1,12 @@
 1.Первое: mvn clean install
+
 2.Второе: docker-compose up --build
+
 Изменены ручки к api:
   Put method -> localhost:8083/user/
   Get userInfo -> localhost:8083/user/
   Get LevelInfo -> localhost:8083/user
+
 Структура проекта:
 ```
 [User Result Update]
