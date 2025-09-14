@@ -5,6 +5,7 @@
   Get userInfo -> localhost:8083/user/
   Get LevelInfo -> localhost:8083/user
 Структура проекта:
+```
 [User Result Update]
                     |
              [Kafka Producer]
@@ -29,7 +30,9 @@
     |          [In-Memory Global Top-20]
     |                  |
     \----------[API GET Global Top-20]----------
+```
 Замысел работы:
+```
 [User Updates] 
       |
       v
@@ -55,3 +58,4 @@
       |
       v
  [API / Services]
+```
