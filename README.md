@@ -4,8 +4,10 @@
 
 Изменены ручки к api:
   Put method -> localhost:8083/user/
-  Get userInfo -> localhost:8083/user/
-  Get LevelInfo -> localhost:8083/user
+  
+  Get method userInfo -> localhost:8083/user/
+  
+  Get method LevelInfo -> localhost:8083/user
 
 Структура проекта:
 ```
