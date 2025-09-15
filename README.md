@@ -7,7 +7,7 @@
   
   Get method userInfo -> localhost:8083/user/
   
-  Get method LevelInfo -> localhost:8083/user
+  Get method LevelInfo -> localhost:8083/level/
 
 Структура проекта:
 ```
