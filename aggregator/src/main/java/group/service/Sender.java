@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 public class Sender {
 	private final KafkaTemplate<String, User> kafkaTemplate;
 
+	@Autowired
 	public Sender(KafkaTemplate<String, User> kafkaTemplate) {
 		this.kafkaTemplate = kafkaTemplate;
 	}
