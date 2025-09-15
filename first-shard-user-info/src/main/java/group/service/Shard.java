@@ -1,66 +1,67 @@
 package group.service;
 
-import group.entities.Delta;
-import group.entities.User;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.springframework.beans.factory.annotation.Qualifier;
+import group.entity.Delta;
+import group.entity.User;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Primary;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 
 
 @Service
 public class Shard {
-	@Value("${STORAGE_CAPACITY}")
+	@Value("${STORAGE_CAPACITY.DEFAULT_TOP_CAPACITY}")
 	private Integer maxCapacity;
 
-	private final AtomicReference<List<User>> localTop20 = new AtomicReference<>(new ArrayList<>());
-	private final Comparator<User> comparator = Comparator
-			.comparing(User::getResult).reversed()
-			.thenComparing(User::getId);
+	private final AtomicReference<Map<Integer, List<User>>> atomicMap = new AtomicReference<>(new HashMap<>());
+
 	private final KafkaTemplate<String, Delta> kafkaTemplate;
 
-	public Shard(@Qualifier("deltaKafkaTemplate") KafkaTemplate<String, Delta> kafkaTemplate) {
+	private final Comparator<User> comparator = Comparator
+			.comparing(User::getResult).reversed()
+			.thenComparing(User::getLevelId);
+
+	@Autowired
+	public Shard(KafkaTemplate<String, Delta> kafkaTemplate) {
 		this.kafkaTemplate = kafkaTemplate;
 	}
 
-	@KafkaListener(topics = "user-info", groupId = "first-topic", containerFactory = "userListenerFactory")
-	public void listen(ConsumerRecord<String, User> record) {
-		Delta delta = new Delta(maxCapacity);
-		User user = record.value();
+	@KafkaListener(topics = "user-info", groupId = "first-group")
+	public void listen(User user) {
+		Delta delta = new Delta();
+		atomicMap.updateAndGet(oldMap -> {
+			Map<Integer, List<User>> newMap = new HashMap<>(oldMap);
+			List<User> oldList = oldMap.get(user.getId());
+			List<User> newList = (oldList == null) ? new ArrayList<>() : new ArrayList<>(oldList);
 
-		localTop20.updateAndGet(oldTop -> {
-			List<User> merged = oldTop.stream()
-					.filter(u -> !u.getId().equals(user.getId()))
-					.collect(Collectors.toList());
-			merged.add(user);
-			merged.sort(comparator);
+			User existing = newList.stream()
+					.filter(u -> u.getLevelId().equals(user.getLevelId()))
+					.findFirst()
+					.orElse(null);
 
-			if(merged.size() > maxCapacity) {
-				List<User> toRemove = merged.subList(maxCapacity, merged.size());
-				delta.getDeleted().addAll(toRemove);
-				merged = new ArrayList<>(merged.subList(0, maxCapacity));
+			if (existing == null || user.getResult() > existing.getResult()) {
+				if (existing != null) {
+					newList.remove(existing);
+				}
+				newList.add(user);
 			}
 
-			if(merged.contains(user)) {
-				delta.getAdded().add(user);
+			newList.sort(comparator);
+			if (newList.size() > maxCapacity) {
+				 newList.subList(maxCapacity, newList.size()).clear();
 			}
 
-			return Collections.unmodifiableList(merged);
+			delta.getMap().put(user.getId(), newList);
+			newMap.put(user.getId(), newList);
+			return newMap;
 		});
 
-		if(!delta.getAdded().isEmpty() || !delta.getDeleted().isEmpty()) {
-			kafkaTemplate.send("third-topic", delta);
+		if (!delta.getMap().isEmpty()) {
+			kafkaTemplate.send("userInfo-aggregator", delta);
 		}
 	}
 }

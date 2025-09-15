@@ -1,22 +1,17 @@
-package entity;
+package group.entity;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Delta {
-	@Value
-	private maxCapactity
+	private final Map<Integer, List<User>> map;
 
-	private List<User> toAdd = new ArrayList<>();
-	private List<User> toRemove = new ArrayList<>();
-
-	public Delta(){}
-
-	public List<User> getAdded() {
-		return toAdd;
+	public Delta() {
+		map = new HashMap<>();
 	}
 
-	public List<User> getDeleted() {
-		return toRemove;
+	public Map<Integer, List<User>> getMap() {
+		return map;
 	}
 }
