@@ -14,6 +14,7 @@ public class Controller {
 	private final Aggregator aggregator;
 	private final Sender sender;
 
+	@Autowired
 	public Controller(Aggregator aggregator, Sender sender) {
 		this.aggregator = aggregator;
 		this.sender = sender;
